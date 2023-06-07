@@ -1,0 +1,14 @@
+{
+	"title"		:	"[TTT2] Speedrunner [ROLE]",
+	"type"		:	"ServerContent",
+    "tags"		:	[ "roleplay", "fun" ],
+    "ignore"    : [
+        ".git/*",
+        ".gitignore",
+        "README.md",
+        "ttt2-role_speed.jpg",
+        "ttt2-role_speed.png",
+        "ttt2-role_speed.txt",
+        "test_notes.txt"
+    ]
+}

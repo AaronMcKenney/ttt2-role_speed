@@ -1,0 +1,19 @@
+local L = LANG.GetLanguageTableReference("en")
+
+--GENERAL ROLE LANGUAGE STRINGS
+L[SPEEDRUNNER.name] = "Speedrunner"
+L["info_popup_" .. SPEEDRUNNER.name] = [[You are a Speedrunner and everyone knows it.
+
+Kill everyone else in the time limit, or perish.]]
+L["body_found_" .. SPEEDRUNNER.abbr] = "They were a Speedrunner."
+L["search_role_" .. SPEEDRUNNER.abbr] = "This person was a Speedrunner!"
+L["target_" .. SPEEDRUNNER.name] = "Speedrunner"
+L["ttt2_desc_" .. SPEEDRUNNER.name] = [[You are a Speedrunner and everyone knows it.
+
+Kill everyone else in the time limit, or perish.]]
+
+--SPEEDRUNNER TEAM
+L[TEAM_SPEEDRUNNER] = "Team Speedrunners"
+L["hilite_win_" .. TEAM_SPEEDRUNNER] = "TEAM SPEEDRUNNER WON"
+L["win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner has won!"
+L["ev_win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner won the round!"
