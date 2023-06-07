@@ -20,7 +20,7 @@ function ROLE:PreInitialize()
 	self.preventFindCredits = false
 
 	self.fallbackTable = {}
-	self.unknownTeam = false -- disables team voice chat.
+	self.unknownTeam = false
 
 	self.defaultTeam = TEAM_SPEEDRUNNER
 	self.defaultEquipment = SPECIAL_EQUIPMENT
@@ -37,9 +37,13 @@ function ROLE:PreInitialize()
 		maximum = 1,
 		minPlayers = 6,
 		random = 30,
-		traitorButton = 0,
+		
+		--Speedrunner can use traitor buttons, to handle the case where traitors hide in traitor rooms, preventing the Speedrunner from winning
+		--Traitor buttons also give Speedrunner a small edge without opening the pandora's box of traitor shop items
+		traitorButton = 1,
 
-		credits = 0,
+		--Despite not having a shop, credits may be needed to open traitor rooms on some maps. Also allows the use of some traitor traps
+		credits = 2,
 		--creditsAwardDeadEnable = 1,
 		--creditsAwardKillEnable = 1,
 		shopFallback = SHOP_DISABLED,
