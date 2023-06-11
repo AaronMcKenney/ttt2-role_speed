@@ -79,7 +79,6 @@ if CLIENT then
 	function HUDELEMENT:Draw()
 		local client = LocalPlayer()
 		local bg_color = COLOR_WHITE
-		local time_left_str = TTT2SpeedrunnerTimeLeftStr()
 		local cur_time = CurTime()
 
 		if client:GetSubRole() ~= ROLE_SPEEDRUNNER or client.ttt2_speedrunner_display_end_time and cur_time > client.ttt2_speedrunner_display_end_time then
@@ -95,6 +94,7 @@ if CLIENT then
 			bg_color = COLOR_BLACK
 		end
 
-		self:DrawComponent(time_left_str, bg_color)
+		local display_str = LANG.GetParamTranslation("speedrunner_hud_display_" .. SPEEDRUNNER.name, {n = GetNumAliveUnaffiliatedPlayers(client), timeleft = TTT2SpeedrunnerTimeLeftStr()})
+		self:DrawComponent(display_str, bg_color)
 	end
 end

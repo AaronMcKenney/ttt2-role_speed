@@ -65,7 +65,7 @@ local function IsInSpecDM(ply)
 	return false
 end
 
-local function GetNumAliveUnaffiliatedPlayers(ply)
+function GetNumAliveUnaffiliatedPlayers(ply)
 	local num_players = 0
 
 	for _, ply_i in ipairs(player.GetAll()) do
@@ -441,7 +441,7 @@ if CLIENT then
 		end
 
 		tData:AddDescriptionLine(
-			LANG.GetParamTranslation("speedrunner_time_left_" .. SPEEDRUNNER.name, {timeleft = TTT2SpeedrunnerTimeLeftStr()}),
+			TTT2SpeedrunnerTimeLeftStr(),
 			COLOR_RED
 		)
 	end)
