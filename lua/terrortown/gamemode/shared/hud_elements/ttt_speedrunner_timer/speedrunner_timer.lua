@@ -79,30 +79,17 @@ if CLIENT then
 	function HUDELEMENT:Draw()
 		local client = LocalPlayer()
 		local bg_color = COLOR_WHITE
-		local time_left_str = "0:00:00"
+		local time_left_str = TTT2SpeedrunnerTimeLeftStr()
 		local cur_time = CurTime()
 
 		if client:GetSubRole() ~= ROLE_SPEEDRUNNER or client.ttt2_speedrunner_display_end_time and cur_time > client.ttt2_speedrunner_display_end_time then
 			return
 		end
 
-		if client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time > cur_time then
-			time_left = client.ttt2_speedrunner_run_end_time - cur_time
-
-			minutes_left = math.floor(time_left / 60)
-			minutes_left_str = tostring(minutes_left)
-
-			seconds_left = time_left - minutes_left * 60
-			seconds_left_whole_num = math.floor(seconds_left)
-			seconds_left_whole_num_str = string.format("%02d", seconds_left_whole_num)
-			seconds_left_fract = seconds_left - seconds_left_whole_num
-			seconds_left_fract_str = string.format("%02d", math.floor(seconds_left_fract * 100))
-
-			time_left_str = minutes_left_str .. ":" .. seconds_left_whole_num_str .. ":" .. seconds_left_fract_str
-
-			if minutes_left == 0 and ((seconds_left_whole_num < 60 and seconds_left_whole_num > 30) or (seconds_left_whole_num < 30 and (seconds_left_whole_num % 2) == 1)) then
-				bg_color = COLOR_RED
-			end
+		if client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time > cur_time and
+			(minutes_left == 0 and ((seconds_left_whole_num < 60 and seconds_left_whole_num > 30) or (seconds_left_whole_num < 30 and (seconds_left_whole_num % 2) == 1)))
+		then
+			bg_color = COLOR_RED
 		elseif client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time < 0 then
 			--Do not visually signal that the speedrun has failed until we get a clear message from the server that this has been the case.
 			bg_color = COLOR_BLACK

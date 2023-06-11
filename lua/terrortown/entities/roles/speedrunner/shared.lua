@@ -172,7 +172,7 @@ if SERVER then
 
 				net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
 				net.WriteInt(-1, 16)
-				net.Send(ply)
+				net.Broadcast()
 
 				--If the speedrun has failed, kill all Speedrunners
 				for _, ply_i in ipairs(player.GetAll()) do
@@ -193,7 +193,7 @@ if SERVER then
 
 		net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
 		net.WriteInt(timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server"), 16)
-		net.Send(ply)
+		net.Broadcast()
 
 		SpawnSmoke(ply:GetPos(), smoke_duration)
 
@@ -338,6 +338,7 @@ if SERVER then
 end
 
 if CLIENT then
+	local material_speedrunner = Material("vgui/ttt/dynamic/roles/icon_speed.vmt")
 	local smokeparticles = {
 		Model("particle/particle_smokegrenade"),
 		Model("particle/particle_noisesphere")
@@ -404,6 +405,45 @@ if CLIENT then
 			client.ttt2_speedrunner_run_end_time = CurTime() + time_left
 			client.ttt2_speedrunner_display_end_time = nil
 		end
+	end)
+
+	--Global function so everyone can know how much time is left
+	function TTT2SpeedrunnerTimeLeftStr()
+		local client = LocalPlayer()
+		local bg_color = COLOR_WHITE
+		local time_left_str = "0:00:00"
+		local cur_time = CurTime()
+
+		if client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time > cur_time then
+			time_left = client.ttt2_speedrunner_run_end_time - cur_time
+
+			minutes_left = math.floor(time_left / 60)
+			minutes_left_str = tostring(minutes_left)
+
+			seconds_left = time_left - minutes_left * 60
+			seconds_left_whole_num = math.floor(seconds_left)
+			seconds_left_whole_num_str = string.format("%02d", seconds_left_whole_num)
+			seconds_left_fract = seconds_left - seconds_left_whole_num
+			seconds_left_fract_str = string.format("%02d", math.floor(seconds_left_fract * 100))
+
+			time_left_str = minutes_left_str .. ":" .. seconds_left_whole_num_str .. ":" .. seconds_left_fract_str
+		end
+
+		return time_left_str
+	end
+
+	hook.Add("TTTRenderEntityInfo", "TTTRenderEntityInfoSpeedrunner", function(tData)
+		local client = LocalPlayer()
+		local ply = tData:GetEntity()
+
+		if not ply:IsPlayer() or ply:GetSubRole() ~= ROLE_SPEEDRUNNER or not client.ttt2_speedrunner_run_end_time or client.ttt2_speedrunner_run_end_time < 0 then
+			return
+		end
+
+		tData:AddDescriptionLine(
+			LANG.GetParamTranslation("speedrunner_time_left_" .. SPEEDRUNNER.name, {timeleft = TTT2SpeedrunnerTimeLeftStr()}),
+			COLOR_RED
+		)
 	end)
 
 	local function ResetSpeedrunnerDataForClient()
