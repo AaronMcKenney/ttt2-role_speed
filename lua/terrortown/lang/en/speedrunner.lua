@@ -17,3 +17,12 @@ L[TEAM_SPEEDRUNNER] = "Team Speedrunners"
 L["hilite_win_" .. TEAM_SPEEDRUNNER] = "TEAM SPEEDRUNNER WON"
 L["win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner has won!"
 L["ev_win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner won the round!"
+
+-- EVENT STRINGS
+-- Need to be very specifically worded, due to how the system translates them.
+L["title_event_speed_start_run"] = "A speedrun began"
+L["desc_event_speed_start_run"] = "{name} attempted a speedrun, with the goal of winning in {seconds} seconds."
+L["title_event_speed_failed_run"] = "A speedrun failed"
+L["desc_event_speed_failed_run"] = "{name} was unable to finish the speedrun started by {starter} in time..."
+L["title_event_speed_aborted_run"] = "A speedrun was aborted"
+L["desc_event_speed_aborted_run"] = "The speedrun started by {name} had to be aborted, as all speedrunners left."
