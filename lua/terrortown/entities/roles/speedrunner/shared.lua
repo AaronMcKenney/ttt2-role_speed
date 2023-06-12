@@ -237,9 +237,10 @@ if SERVER then
 		end
 
 		--More complicated method for setting jump power, which works if other jump modifying effects occur. Downside is that all addons would need to use this method, so...
-		ply:SetJumpPower(ply:GetJumpPower() + DEFAULT_JUMP_POWER * (GetConVar("ttt2_speedrunner_jump_scale"):GetFloat() - 1.0))
-		--Simpler method would be:
-		--ply:SetJumpPower(DEFAULT_JUMP_POWER * GetConVar("ttt2_speedrunner_jump_scale"):GetFloat())
+		--Complex version seems to be bugged. Jump is not reset properly if Speedrunner loses and the game ends naturally (explicitly: In the following game the player can't jump at all)
+		--ply:SetJumpPower(ply:GetJumpPower() + DEFAULT_JUMP_POWER * (GetConVar("ttt2_speedrunner_jump_scale"):GetFloat() - 1.0))
+		--Simpler method:
+		ply:SetJumpPower(DEFAULT_JUMP_POWER * GetConVar("ttt2_speedrunner_jump_scale"):GetFloat())
 		if ply:GetJumpPower() > DEFAULT_JUMP_POWER then
 			ply:GiveEquipmentItem("item_ttt_nofalldmg")
 		end
@@ -261,9 +262,10 @@ if SERVER then
 		end
 
 		--More complicated method for setting jump power, which works if other jump modifying effects occur. Downside is that all addons would need to use this method, so...
-		ply:SetJumpPower(ply:GetJumpPower() - DEFAULT_JUMP_POWER * (GetConVar("ttt2_speedrunner_jump_scale"):GetFloat() - 1.0))
+		--Complex version seems to be bugged. Jump is not reset properly if Speedrunner loses and the game ends naturally (explicitly: In the following game the player can't jump at all)
+		--ply:SetJumpPower(ply:GetJumpPower() - DEFAULT_JUMP_POWER * (GetConVar("ttt2_speedrunner_jump_scale"):GetFloat() - 1.0))
 		--Simpler method would be:
-		--ply:SetJumpPower(DEFAULT_JUMP_POWER)
+		ply:SetJumpPower(DEFAULT_JUMP_POWER)
 		ply:RemoveEquipmentItem("item_ttt_nofalldmg")
 
 		ply:RemoveEquipmentItem("item_ttt_radar")
