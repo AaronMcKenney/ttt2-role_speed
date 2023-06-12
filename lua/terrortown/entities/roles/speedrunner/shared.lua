@@ -2,6 +2,7 @@ if SERVER then
 	AddCSLuaFile()
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_speed.vmt")
 	util.AddNetworkString("TTT2SpeedrunnerAnnounceSpeedrun")
+	util.AddNetworkString("TTT2SpeedrunnerNumLeft")
 	util.AddNetworkString("TTT2SpeedrunnerSpawnSmoke")
 	util.AddNetworkString("TTT2SpeedrunnerRateOfFireUpdate")
 end
@@ -65,23 +66,23 @@ local function IsInSpecDM(ply)
 	return false
 end
 
-function GetNumAliveUnaffiliatedPlayers(ply)
-	local num_players = 0
-
-	for _, ply_i in ipairs(player.GetAll()) do
-		if IsValid(ply_i) and ply_i:IsPlayer() and ply_i:GetTeam() ~= ply:GetTeam() and (ply_i:Alive() or ply_i:IsReviving()) and not ply_i:IsSpec() and not IsInSpecDM(ply_i) then
-			num_players = num_players + 1
-		end
-	end
-
-	return num_players
-end
-
 if SERVER then
 	--Cached server vars
 	--Used to handle the sensitive timing wherein a speedrun ends, the speedrunner is killed, and then the speedrunner immediately attempts to revive (which they shouldn't).
 	local SPEEDRUN_IN_PROGRESS = false
 	local SPEEDRUN_STARTER = nil
+
+	local function GetNumAliveUnaffiliatedPlayers(ply)
+		local num_players = 0
+
+		for _, ply_i in ipairs(player.GetAll()) do
+			if IsValid(ply_i) and ply_i:IsPlayer() and ply_i:GetTeam() ~= ply:GetTeam() and ply_i:GetTeam() ~= TEAM_NONE and not ply_i:GetSubRoleData().preventWin and (ply_i:Alive() or ply_i:IsReviving()) and not ply_i:IsSpec() and not IsInSpecDM(ply_i) then
+				num_players = num_players + 1
+			end
+		end
+
+		return num_players
+	end
 
 	--WeaponSpeed functionality taken and modified from TTT2 Super Soda mod
 	local function ApplyWeaponSpeedForSpeedrunner(wep)
@@ -134,6 +135,20 @@ if SERVER then
 		end
 	end
 
+	local function SendNumPlayersLeft(ply)
+		net.Start("TTT2SpeedrunnerNumLeft")
+		net.WriteInt(GetNumAliveUnaffiliatedPlayers(ply), 16)
+		net.Send(ply)
+	end
+
+	local function BroadcastNumPlayersLeft()
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:GetSubRole() == ROLE_SPEEDRUNNER then
+				SendNumPlayersLeft(ply)
+			end
+		end
+	end
+
 	local function SpawnSmoke(pos, duration)
 		if not GetConVar("ttt2_speedrunner_smoke_enable"):GetBool() then
 			return
@@ -158,7 +173,7 @@ if SERVER then
 			return
 		end
 
-		if not timer.Exists("TTT2SpeedrunnerSpeedrun_Server") then
+		if not SPEEDRUN_IN_PROGRESS or not timer.Exists("TTT2SpeedrunnerSpeedrun_Server") then
 			run_length = GetConVar("ttt2_speedrunner_time_base"):GetInt() + GetNumAliveUnaffiliatedPlayers(ply) * GetConVar("ttt2_speedrunner_time_per_player"):GetInt()
 			timer.Create("TTT2SpeedrunnerSpeedrun_Server", run_length, 1, function()
 				SPEEDRUN_IN_PROGRESS = false
@@ -182,12 +197,10 @@ if SERVER then
 				end
 			end)
 
+			BroadcastNumPlayersLeft()
 			SPEEDRUN_IN_PROGRESS = true
 			SPEEDRUN_STARTER = ply
-			if GetRoundState() ~= ROUND_BEGIN then
-				--For whatever reason events can't trigger until some point after roles are assigned. So this event only triggers if someone triggers a speedrun mid-game
-				events.Trigger(EVENT_SPEED_START_RUN, ply, run_length)
-			end
+			events.Trigger(EVENT_SPEED_START_RUN, SPEEDRUN_STARTER, run_length)
 			smoke_duration = 10
 		end
 
@@ -235,7 +248,9 @@ if SERVER then
 
 		ply:GiveEquipmentItem("item_ttt_radar")
 
-		AttemptToStartSpeedrun(ply)
+		--Don't attempt to start a speedrun here because not everyone has received their roles yet, which could impact the run length.
+		--Do send the number of players left, just in case this is happening mid-game
+		SendNumPlayersLeft(ply)
 	end
 
 	function ROLE:RemoveRoleLoadout(ply, isRoleChange)
@@ -273,11 +288,21 @@ if SERVER then
 		end
 	end)
 
+	hook.Add("PlayerSpawn", "PlayerSpawnSpeedrunner", function(ply)
+		BroadcastNumPlayersLeft()
+	end)
+
 	hook.Add("TTT2UpdateSubrole", "TTT2UpdateSubroleSpeedrunner", function(self, oldSubrole, subrole)
 		--Prematurely stop the speedrun if the only speedrunner changed roles
 		if oldSubrole == ROLE_SPEEDRUNNER then
 			AttemptToStopSpeedrun()
 		end
+
+		BroadcastNumPlayersLeft()
+	end)
+
+	hook.Add("TTT2UpdateTeam", "TTT2UpdateTeamSpeedrunner", function(ply, oldTeam, newTeam)
+		BroadcastNumPlayersLeft()
 	end)
 
 	hook.Add("PlayerDisconnected", "PlayerDisconnectedSpeedrunner", function(ply)
@@ -285,9 +310,13 @@ if SERVER then
 		if ply:GetSubRole() == ROLE_SPEEDRUNNER then
 			AttemptToStopSpeedrun()
 		end
+
+		BroadcastNumPlayersLeft()
 	end)
 
 	hook.Add("TTT2PostPlayerDeath", "TTT2PostPlayerDeathSpeedrunner", function(victim, inflictor, attacker)
+		BroadcastNumPlayersLeft()
+
 		--Note: "victim" is considered dead at this point.
 		if not IsValid(victim) or not victim:IsPlayer() or IsInSpecDM(victim) or victim:GetSubRole() ~= ROLE_SPEEDRUNNER or not SPEEDRUN_IN_PROGRESS then
 			return
@@ -317,12 +346,43 @@ if SERVER then
 		)
 	end)
 
+	hook.Add("TTT2SpecialRoleSyncing", "TTT2SpecialRoleSyncingSpeedrunner", function(ply, tbl)
+		--Speedrunner should know the roles of everyone who doesn't need to be killed to end the game.
+		--Reason for this is straightforward: Not knowing this disrupts the client UI for displaying the actual number of players needed to be killed
+		--In addition, many of the roles with "preventWin" need to get rid of their role, which can lead to speedruns that end quickly and anticlimatically (ex. Cursed, Jester, Swapper)
+		if GetRoundState() == ROUND_POST or not IsValid(ply) or ply:GetSubRole() ~= ROLE_SPEEDRUNNER then
+			return
+		end
+
+		for ply_i in pairs(tbl) do
+			if ply_i:GetTeam() == TEAM_NONE or ply_i:GetSubRoleData().preventWin then
+				tbl[ply_i] = {ply_i:GetSubRole(), ply_i:GetTeam()}
+			end
+		end
+	end)
+
+	hook.Add("TTT2ModifyRadarRole", "TTT2ModifyRadarRoleSpeedrunner", function(ply, target)
+		--Same logic as used in TTT2SpecialRoleSyncing hook
+		if GetRoundState() == ROUND_POST or not IsValid(ply) or ply:GetSubRole() ~= ROLE_SPEEDRUNNER then
+			return
+		end
+
+		if target:GetTeam() == TEAM_NONE or target:GetSubRoleData().preventWin then
+			return target:GetSubRole(), target:GetTeam()
+		end
+	end)
+
 	hook.Add("TTTBeginRound", "TTTBeginRoundSpeedrunner", function()
-		--For whatever reason events can't trigger until some point after roles are assigned. So this event only triggers a bit after that, and only if there's a speedrunner at the start.
-		if SPEEDRUN_IN_PROGRESS and SPEEDRUN_STARTER then
-			print("BMF CALLING TTTBeginRoundSpeedrunner")
-			run_length = GetConVar("ttt2_speedrunner_time_base"):GetInt() + GetNumAliveUnaffiliatedPlayers(SPEEDRUN_STARTER) * GetConVar("ttt2_speedrunner_time_per_player"):GetInt()
-			events.Trigger(EVENT_SPEED_START_RUN, SPEEDRUN_STARTER, run_length)
+		--Starting a speedrun upon GiveRoleLoadout is likely to not take in consideration the roles that other players have yet to be assigned.
+		--In addition, for whatever reason events can't trigger until some point after roles are assigned.
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:GetSubRole() == ROLE_SPEEDRUNNER then
+				AttemptToStartSpeedrun(ply)
+			end
+
+			if SPEEDRUN_IN_PROGRESS then
+				break
+			end
 		end
 	end)
 
@@ -407,6 +467,11 @@ if CLIENT then
 		end
 	end)
 
+	net.Receive("TTT2SpeedrunnerNumLeft", function()
+		local client = LocalPlayer()
+		client.ttt2_speedrunner_num_left = net.ReadInt(16)
+	end)
+
 	--Global function so everyone can know how much time is left
 	function TTT2SpeedrunnerTimeLeftStr()
 		local client = LocalPlayer()
@@ -450,6 +515,7 @@ if CLIENT then
 		client = LocalPlayer()
 		client.ttt2_speedrunner_run_end_time = nil
 		client.ttt2_speedrunner_display_end_time = nil
+		client.ttt2_speedrunner_num_left = nil
 	end
 	hook.Add("TTTPrepareRound", "TTTPrepareRoundSeanceForClient", ResetSpeedrunnerDataForClient)
 	hook.Add("TTTEndRound", "TTTEndRoundSeanceForClient", ResetSpeedrunnerDataForClient)

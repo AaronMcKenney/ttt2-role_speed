@@ -94,7 +94,8 @@ if CLIENT then
 			bg_color = COLOR_BLACK
 		end
 
-		local display_str = LANG.GetParamTranslation("speedrunner_hud_display_" .. SPEEDRUNNER.name, {n = GetNumAliveUnaffiliatedPlayers(client), timeleft = TTT2SpeedrunnerTimeLeftStr()})
+		local num_left = client.ttt2_speedrunner_num_left or 0
+		local display_str = LANG.GetParamTranslation("speedrunner_hud_display_" .. SPEEDRUNNER.name, {n = num_left, timeleft = TTT2SpeedrunnerTimeLeftStr()})
 		self:DrawComponent(display_str, bg_color)
 	end
 end
