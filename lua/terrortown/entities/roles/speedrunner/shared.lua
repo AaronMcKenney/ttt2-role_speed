@@ -226,6 +226,11 @@ if SERVER then
 			SPEEDRUN_IN_PROGRESS = false
 			events.Trigger(EVENT_SPEED_ABORTED_RUN, SPEEDRUN_STARTER)
 			SPEEDRUN_STARTER = nil
+
+			--Tell clients who were formerly Speedrunners that the speedrun has been stopped.
+			net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
+			net.WriteInt(-1, 16)
+			net.Broadcast()
 		end
 
 		return
@@ -247,7 +252,16 @@ if SERVER then
 
 		ApplyWeaponSpeedForSpeedrunner(ply:GetActiveWeapon())
 
-		ply:GiveEquipmentItem("item_ttt_radar")
+		if GetRoundState() ~= ROUND_ACTIVE then
+			--Since not all roles have been allocated, the radar will show almost all players as belonging to TEAM_NONE. so delay by some arbitrary time as a hack.
+			timer.Simple(2, function()
+				ply:GiveEquipmentItem("item_ttt_radar")
+			end)
+		else
+			--The player has gotten this role mid-game. Attempt to start a speedrun in case it isn't already going on
+			AttemptToStartSpeedrun(ply)
+			ply:GiveEquipmentItem("item_ttt_radar")
+		end
 
 		--Don't attempt to start a speedrun here because not everyone has received their roles yet, which could impact the run length.
 		--Do send the number of players left, just in case this is happening mid-game
