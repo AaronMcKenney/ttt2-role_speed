@@ -149,19 +149,22 @@ if SERVER then
 		end
 	end
 
-	local function SpawnSmoke(pos, duration)
+	local function SpawnSmoke(spawner_id, pos, duration)
 		if not GetConVar("ttt2_speedrunner_smoke_enable"):GetBool() then
 			return
 		end
 
 		for _, ply in ipairs(player.GetAll()) do
+			local smoke_alpha = 200
+			if ply:SteamID64() == spawner_id then
+				smoke_alpha = smoke_alpha / 10
+				print("BMF SMOKE ALPHA DECREASED TO " .. tostring(smoke_alpha) .. " FOR " .. ply:GetName())
+			end
+
 			net.Start("TTT2SpeedrunnerSpawnSmoke")
 			net.WriteVector(pos)
-			if ply:GetSubRole() ~= ROLE_SPEEDRUNNER then
-				net.WriteInt(duration, 16)
-			else
-				net.WriteInt(duration/6, 16)
-			end
+			net.WriteInt(duration, 16)
+			net.WriteInt(smoke_alpha, 16)
 			net.Send(ply)
 		end
 	end
@@ -208,7 +211,7 @@ if SERVER then
 		net.WriteInt(timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server"), 16)
 		net.Broadcast()
 
-		SpawnSmoke(ply:GetPos(), smoke_duration)
+		SpawnSmoke(ply:SteamID64(), ply:GetPos(), smoke_duration)
 
 		return
 	end
@@ -338,16 +341,26 @@ if SERVER then
 			return
 		end
 
+		--TODO: HANDLE INSTEAD BY MAKING EACH TEAM HAVE A DIFFERENT TIMER.
+		--Extremely unlikely scenario: Two speedrunners on different teams are trying to win. They are all that remains.
+		--In this scenario, ordinarily they would be unable to permanently kill the other due to sharing the same speedrun timer.
+		--At the end, both would die when the timer stop and it would be a tie.
+		--To make things more fun for the players in this scenario, simply prevent the revival from occurring if the speedrunner is killed by an opposing speedrunner.
+		if IsValid(attacker) and attacker:IsPlayer() and attacker:GetSubRole() == ROLE_SPEEDRUNNER and attacker:GetTeam() ~= victim:GetTeam() then
+			--Don't remove body. It would be funny if someone revives this person.
+			return
+		end
+
 		--If the speedrun is still going on, remove the player's corpse in a puff of smoke and respawn the player with some time penalty
 		corpse = victim:FindCorpse()
 		if corpse then
-			SpawnSmoke(corpse:GetPos(), 5)
+			SpawnSmoke(victim:SteamID64(), corpse:GetPos(), 3)
 			corpse:Remove()
 		end
 
 		victim:Revive(GetConVar("ttt2_speedrunner_respawn_time"):GetInt(), --Delay
 			function(ply) --OnRevive function
-				SpawnSmoke(ply:GetPos(), 5)
+				SpawnSmoke(ply:SteamID64(), ply:GetPos(), 3)
 			end,
 			function(ply) --DoCheck function
 				--Return false (do not go through with the revival) if doing so could cause issues
@@ -431,6 +444,7 @@ if CLIENT then
 		local client = LocalPlayer()
 		local pos = net.ReadVector()
 		local smoke_duration = net.ReadInt(16)
+		local smoke_alpha = net.ReadInt(16)
 
 		--Following code was used from the TTT2 Pharaoh&Graverobber role
 		-- smoke spawn code by Alf21
@@ -446,7 +460,7 @@ if CLIENT then
 			if p then
 				local gray = math.random(125, 255)
 				p:SetColor(gray, gray, gray)
-				p:SetStartAlpha(200)
+				p:SetStartAlpha(smoke_alpha)
 				p:SetEndAlpha(0)
 				p:SetVelocity(VectorRand() * math.Rand(900, 1300))
 				p:SetLifeTime(0)
