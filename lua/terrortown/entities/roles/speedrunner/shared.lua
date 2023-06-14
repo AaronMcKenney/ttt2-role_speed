@@ -558,16 +558,16 @@ if CLIENT then
 		local cur_time = CurTime()
 
 		if client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time > cur_time then
-			time_left = client.ttt2_speedrunner_run_end_time - cur_time
+			local time_left = client.ttt2_speedrunner_run_end_time - cur_time
 
-			minutes_left = math.floor(time_left / 60)
-			minutes_left_str = tostring(minutes_left)
+			local minutes_left = math.floor(time_left / 60)
+			local minutes_left_str = tostring(minutes_left)
 
-			seconds_left = time_left - minutes_left * 60
-			seconds_left_whole_num = math.floor(seconds_left)
-			seconds_left_whole_num_str = string.format("%02d", seconds_left_whole_num)
-			seconds_left_fract = seconds_left - seconds_left_whole_num
-			seconds_left_fract_str = string.format("%02d", math.floor(seconds_left_fract * 100))
+			local seconds_left = time_left - minutes_left * 60
+			local seconds_left_whole_num = math.floor(seconds_left)
+			local seconds_left_whole_num_str = string.format("%02d", seconds_left_whole_num)
+			local seconds_left_fract = seconds_left - seconds_left_whole_num
+			local seconds_left_fract_str = string.format("%02d", math.floor(seconds_left_fract * 100))
 
 			time_left_str = minutes_left_str .. ":" .. seconds_left_whole_num_str .. ":" .. seconds_left_fract_str
 		end

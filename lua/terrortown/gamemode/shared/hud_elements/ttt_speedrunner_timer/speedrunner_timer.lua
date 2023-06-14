@@ -85,17 +85,30 @@ if CLIENT then
 			return
 		end
 
-		if client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time > cur_time and
-			(minutes_left == 0 and ((seconds_left_whole_num < 60 and seconds_left_whole_num > 30) or (seconds_left_whole_num < 30 and (seconds_left_whole_num % 2) == 1)))
-		then
-			bg_color = COLOR_RED
-		elseif client.ttt2_speedrunner_run_end_time and client.ttt2_speedrunner_run_end_time < 0 then
-			--Do not visually signal that the speedrun has failed until we get a clear message from the server that this has been the case.
-			bg_color = COLOR_BLACK
-		end
-
 		local num_left = client.ttt2_speedrunner_num_left or 0
 		local display_str = LANG.GetParamTranslation("speedrunner_hud_display_" .. SPEEDRUNNER.name, {n = num_left, timeleft = TTT2SpeedrunnerTimeLeftStr()})
+
+		if client.ttt2_speedrunner_run_end_time then
+			local time_left = client.ttt2_speedrunner_run_end_time - cur_time
+			local minutes_left = math.floor(time_left / 60)
+			local seconds_left_whole_num = math.floor(time_left - minutes_left * 60)
+
+			--Two cases here: 1. <60 seconds the timer is red. 2. <30 seconds the timer alternates between red and white.
+			if client.ttt2_speedrunner_run_end_time > cur_time and
+				(minutes_left == 0 and ((seconds_left_whole_num < 60 and seconds_left_whole_num > 30) or (seconds_left_whole_num < 30 and (seconds_left_whole_num % 2) == 1)))
+			then
+				bg_color = COLOR_RED
+			elseif client.ttt2_speedrunner_run_end_time < 0 then
+				--Do not visually signal that the speedrun has failed until we get a clear message from the server that this has been the case.
+				bg_color = COLOR_BLACK
+
+				--Make the display blink on/off like a beeping alarm clock.
+				if client.ttt2_speedrunner_display_end_time and client.ttt2_speedrunner_display_end_time > cur_time and math.floor((client.ttt2_speedrunner_display_end_time - cur_time)*2) % 2 == 0 then
+					display_str = ""
+				end
+			end
+		end
+
 		self:DrawComponent(display_str, bg_color)
 	end
 end
