@@ -203,7 +203,6 @@ if SERVER then
 			local smoke_alpha = 200
 			if ply:SteamID64() == spawner_id then
 				smoke_alpha = smoke_alpha / 10
-				print("BMF SMOKE ALPHA DECREASED TO " .. tostring(smoke_alpha) .. " FOR " .. ply:GetName())
 			end
 
 			net.Start("TTT2SpeedrunnerSpawnSmoke")
