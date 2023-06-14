@@ -3,6 +3,7 @@ CreateConVar("ttt2_speedrunner_time_base", "105", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_time_per_player", "15", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_respawn_time", "15", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_smoke_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_rainbow_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_speed_scale", "3.0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_jump_scale", "2.0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_fire_rate_scale", "1.5", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
@@ -51,6 +52,14 @@ hook.Add("TTTUlxDynamicRCVars", "TTTUlxDynamicSpeedrunnerCVars", function(tbl)
 		desc = "ttt2_speedrunner_smoke_enable (Def: 1)"
 	})
 
+	--# Should the Speedrunner's role and team icon have a rainbow effect?
+	--  ttt2_speedrunner_rainbow_enable [0/1] (default: 1)
+	table.insert(tbl[ROLE_SPEEDRUNNER], {
+		cvar = "ttt2_speedrunner_rainbow_enable",
+		checkbox = true,
+		desc = "ttt2_speedrunner_rainbow_enable (Def: 1)"
+	})
+
 	--# Multiplier for the Speedrunner's move speed
 	--  ttt2_speedrunner_speed_scale [1.0..n.m] (default: 3.0)
 	table.insert(tbl[ROLE_SPEEDRUNNER], {
@@ -90,6 +99,7 @@ hook.Add("TTT2SyncGlobals", "AddSpeedrunnerGlobals", function()
 	SetGlobalInt("ttt2_speedrunner_time_per_player", GetConVar("ttt2_speedrunner_time_per_player"):GetInt())
 	SetGlobalInt("ttt2_speedrunner_respawn_time", GetConVar("ttt2_speedrunner_respawn_time"):GetInt())
 	SetGlobalBool("ttt2_speedrunner_smoke_enable", GetConVar("ttt2_speedrunner_smoke_enable"):GetBool())
+	SetGlobalBool("ttt2_speedrunner_rainbow_enable", GetConVar("ttt2_speedrunner_rainbow_enable"):GetBool())
 	SetGlobalFloat("ttt2_speedrunner_speed_scale", GetConVar("ttt2_speedrunner_speed_scale"):GetFloat())
 	SetGlobalFloat("ttt2_speedrunner_jump_scale", GetConVar("ttt2_speedrunner_jump_scale"):GetFloat())
 	SetGlobalFloat("ttt2_speedrunner_fire_rate_scale", GetConVar("ttt2_speedrunner_fire_rate_scale"):GetFloat())
@@ -106,6 +116,9 @@ cvars.AddChangeCallback("ttt2_speedrunner_respawn_time", function(name, old, new
 end)
 cvars.AddChangeCallback("ttt2_speedrunner_smoke_enable", function(name, old, new)
 	SetGlobalBool("ttt2_speedrunner_smoke_enable", tobool(tonumber(new)))
+end)
+cvars.AddChangeCallback("ttt2_speedrunner_rainbow_enable", function(name, old, new)
+	SetGlobalBool("ttt2_speedrunner_rainbow_enable", tobool(tonumber(new)))
 end)
 cvars.AddChangeCallback("ttt2_speedrunner_speed_scale", function(name, old, new)
 	SetGlobalFloat("ttt2_speedrunner_speed_scale", tonumber(new))

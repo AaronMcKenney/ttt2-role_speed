@@ -52,6 +52,51 @@ function ROLE:PreInitialize()
 
 		togglable = true
 	}
+
+	if CLIENT then
+		self.h_ori, self.s_ori, self.v_ori = ColorToHSV(roles.SPEEDRUNNER.color)
+		self.h_cur = self.h_ori
+		if GetConVar("ttt2_speedrunner_rainbow_enable"):GetBool() then
+			hook.Add("Think", "ThinkTTT2Speedrunner", function()
+				--We cache the HSV color here, as the conversion between RGB and HSV is lossy, leading to unwanted color changes
+				self.h_cur = self.h_cur + 0.2
+				if self.h_cur > 359 then
+					self.h_cur = self.h_cur - 360
+				end
+
+				self.color = HSVToColor(self.h_cur, self.s_ori, self.v_ori)
+
+				--TTT2 code alters the icon from white to black if the sum of the R,G, and B components is 500 or more.
+				--Not sure why 500 was chosen, but we'll need to aim below that lest our icon alternate between black and white.
+				--Note: It was determined experimentally that the color spectrum we use is almost always under 500 except during a few dozen frames when we near yellow, cyan, and magenta
+				--  Explicitly, it never went higher than 522. But it can be as low as 276.
+				--  All in all, the change here to keep the total under 500 should be fairly unnoticeable.
+				local rgb_total = self.color.r + self.color.g + self.color.b
+				if rgb_total >= 500 then
+					local rgb_diff = math.ceil((rgb_total - 499)/3)
+					self.color.r = self.color.r - rgb_diff
+					self.color.g = self.color.g - rgb_diff
+					self.color.b = self.color.b - rgb_diff
+				end
+
+				self.dkcolor = util.ColorDarken(self.color, 30)
+				self.ltcolor = util.ColorLighten(self.color, 30)
+				self.bgcolor = util.ColorComplementary(self.color)
+
+				--Update TEAM_SPEEDRUNNER's color
+				TEAMS["speedrunners"].color = self.color
+				--Update every Speedrunner's role color (for some reason all players can have their own color. It is odd.
+				for _, ply in ipairs(player.GetAll()) do
+					if ply:GetSubRole() == ROLE_SPEEDRUNNER then
+						ply:SetRoleColor(self.color)
+						ply:SetRoleDkColor(self.dkcolor)
+						ply:SetRoleLtColor(self.ltcolor)
+						ply:SetRoleBgColor(self.bgcolor)
+					end
+				end
+			end)
+		end
+	end
 end
 
 --CONSTANTS
@@ -321,6 +366,10 @@ if SERVER then
 	end)
 
 	hook.Add("TTT2UpdateTeam", "TTT2UpdateTeamSpeedrunner", function(ply, oldTeam, newTeam)
+		--Do not attempt to stop the speedrun if the Speedrunner changed teams.
+		--The speedrun will continue with no changes in time left.
+		--This leads to a highly unlikely but interesting scenario wherein two speedrunners exist on two different teams who share the same speedrun timer.
+		--  In such a scenario, they must compete with eachother to end the game and win before the other.
 		BroadcastNumPlayersLeft()
 	end)
 
@@ -341,7 +390,6 @@ if SERVER then
 			return
 		end
 
-		--TODO: HANDLE INSTEAD BY MAKING EACH TEAM HAVE A DIFFERENT TIMER.
 		--Extremely unlikely scenario: Two speedrunners on different teams are trying to win. They are all that remains.
 		--In this scenario, ordinarily they would be unable to permanently kill the other due to sharing the same speedrun timer.
 		--At the end, both would die when the timer stop and it would be a tie.
