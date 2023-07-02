@@ -468,6 +468,13 @@ if SERVER then
 		if timer.Exists("TTT2SpeedrunnerSpeedrun_Server") then
 			timer.Remove("TTT2SpeedrunnerSpeedrun_Server")
 		end
+		
+		--Done for sanity. If jump power isn't reset properly then it will carry over to subsequent rounds, destroying the user's experience.
+		for _, ply in ipairs(player.GetAll()) do
+			if ply:GetSubRole() == ROLE_SPEEDRUNNER then
+				ply:SetJumpPower(DEFAULT_JUMP_POWER)
+			end
+		end
 	end
 	hook.Add("TTTPrepareRound", "TTTPrepareRoundSeanceForServer", ResetSpeedrunnerDataForServer)
 	hook.Add("TTTEndRound", "TTTEndRoundSeanceForServer", ResetSpeedrunnerDataForServer)
