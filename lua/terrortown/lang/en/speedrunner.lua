@@ -19,7 +19,7 @@ L["win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner has won!"
 L["ev_win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner won the round!"
 
 -- OTHER ROLE LANGUAGE STRINGS
-L["speedrunner_hud_display_" .. SPEEDRUNNER.name] = "{n} PLAYER(S) LEFT ({timeleft})"
+L["hud_display_" .. SPEEDRUNNER.name] = "{n} PLAYER(S) LEFT ({timeleft})"
 
 -- EVENT STRINGS
 -- Need to be very specifically worded, due to how the system translates them.

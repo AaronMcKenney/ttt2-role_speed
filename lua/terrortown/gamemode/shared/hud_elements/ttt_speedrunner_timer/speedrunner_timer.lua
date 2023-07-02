@@ -86,7 +86,7 @@ if CLIENT then
 		end
 
 		local num_left = client.ttt2_speedrunner_num_left or 0
-		local display_str = LANG.GetParamTranslation("speedrunner_hud_display_" .. SPEEDRUNNER.name, {n = num_left, timeleft = TTT2SpeedrunnerTimeLeftStr()})
+		local display_str = LANG.GetParamTranslation("hud_display_" .. SPEEDRUNNER.name, {n = num_left, timeleft = TTT2SpeedrunnerTimeLeftStr()})
 
 		if client.ttt2_speedrunner_run_end_time then
 			local time_left = client.ttt2_speedrunner_run_end_time - cur_time
