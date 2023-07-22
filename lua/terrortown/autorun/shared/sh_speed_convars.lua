@@ -1,7 +1,7 @@
 --ConVar syncing
-CreateConVar("ttt2_speedrunner_time_base", "105", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
-CreateConVar("ttt2_speedrunner_time_per_player", "15", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
-CreateConVar("ttt2_speedrunner_respawn_time", "15", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_time_base", "50", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_time_per_player", "10", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_respawn_time", "20", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_smoke_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_rainbow_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_speed_scale", "3.0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
@@ -14,15 +14,15 @@ hook.Add("TTTUlxDynamicRCVars", "TTTUlxDynamicSpeedrunnerCVars", function(tbl)
 	--# The number of seconds that the speedrunner has to win the game is based on the following formula:
 	--  ttt2_speedrunner_time_base + n * ttt2_speedrunner_time_per_player
 	--  Where n is the number of players who are currently alive and aren't currently on your team.
-	--  ttt2_speedrunner_time_base [0..n] (default: 105)
-	--  ttt2_speedrunner_time_per_player [0..n] (default: 15)
+	--  ttt2_speedrunner_time_base [0..n] (default: 50)
+	--  ttt2_speedrunner_time_per_player [0..n] (default: 10)
 	table.insert(tbl[ROLE_SPEEDRUNNER], {
 		cvar = "ttt2_speedrunner_time_base",
 		slider = true,
 		min = 0,
 		max = 360,
 		decimal = 0,
-		desc = "ttt2_speedrunner_time_base (Def: 105)"
+		desc = "ttt2_speedrunner_time_base (Def: 50)"
 	})
 	table.insert(tbl[ROLE_SPEEDRUNNER], {
 		cvar = "ttt2_speedrunner_time_per_player",
@@ -30,18 +30,18 @@ hook.Add("TTTUlxDynamicRCVars", "TTTUlxDynamicSpeedrunnerCVars", function(tbl)
 		min = 0,
 		max = 90,
 		decimal = 0,
-		desc = "ttt2_speedrunner_time_per_player (Def: 15)"
+		desc = "ttt2_speedrunner_time_per_player (Def: 10)"
 	})
 
 	--# Respawn time in seconds (Disabled if 0). Speedrunner will not respawn if they failed the speedrun.
-	--  ttt2_speedrunner_respawn_time [0..n] (default: 15)
+	--  ttt2_speedrunner_respawn_time [0..n] (default: 20)
 	table.insert(tbl[ROLE_SPEEDRUNNER], {
 		cvar = "ttt2_speedrunner_respawn_time",
 		slider = true,
 		min = 0,
 		max = 30,
 		decimal = 0,
-		desc = "ttt2_speedrunner_respawn_time (Def: 15)"
+		desc = "ttt2_speedrunner_respawn_time (Def: 20)"
 	})
 
 	--# Should the opposition see a bunch of smoke when the Speedrunner spawns/dies/revives?
