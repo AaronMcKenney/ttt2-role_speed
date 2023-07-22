@@ -116,6 +116,24 @@ if SERVER then
 	--Used to handle the sensitive timing wherein a speedrun ends, the speedrunner is killed, and then the speedrunner immediately attempts to revive (which they shouldn't).
 	local SPEEDRUN_IN_PROGRESS = false
 	local SPEEDRUN_STARTER = nil
+	local SPEEDRUN_START = nil
+	--Used to determine high scores at the end of the round.
+	local NUM_PLYS_AT_ROUND_BEGIN = 0
+
+	local function GetNumPlayers()
+		if NUM_PLYS_AT_ROUND_BEGIN > 0 then
+			return NUM_PLYS_AT_ROUND_BEGIN
+		end
+		
+		local num_players = 0
+		for _, ply in ipairs(player.GetAll()) do
+			if not ply:IsSpec() and not IsInSpecDM(ply) then
+				num_players = num_players + 1
+			end
+		end
+		
+		return num_players
+	end
 
 	local function GetNumAliveUnaffiliatedPlayers(ply)
 		local num_players = 0
@@ -244,6 +262,7 @@ if SERVER then
 				end
 			end)
 
+			SPEEDRUN_START = CurTime()
 			BroadcastNumPlayersLeft()
 			SPEEDRUN_IN_PROGRESS = true
 			SPEEDRUN_STARTER = ply
@@ -260,7 +279,7 @@ if SERVER then
 		return
 	end
 
-	local function AttemptToStopSpeedrun()
+	local function AttemptToAbortSpeedrun()
 		--If there are no alive speedrunners left, can safely stop the speedrun and mark it as a failure
 		if timer.Exists("TTT2SpeedrunnerSpeedrun_Server") then
 			for _, ply in ipairs(player.GetAll()) do
@@ -270,6 +289,7 @@ if SERVER then
 			end
 
 			timer.Remove("TTT2SpeedrunnerSpeedrun_Server")
+			SPEEDRUN_START = nil
 			SPEEDRUN_IN_PROGRESS = false
 			events.Trigger(EVENT_SPEED_ABORTED_RUN, SPEEDRUN_STARTER)
 			SPEEDRUN_STARTER = nil
@@ -358,7 +378,7 @@ if SERVER then
 	hook.Add("TTT2UpdateSubrole", "TTT2UpdateSubroleSpeedrunner", function(self, oldSubrole, subrole)
 		--Prematurely stop the speedrun if the only speedrunner changed roles
 		if oldSubrole == ROLE_SPEEDRUNNER then
-			AttemptToStopSpeedrun()
+			AttemptToAbortSpeedrun()
 		end
 
 		BroadcastNumPlayersLeft()
@@ -375,7 +395,7 @@ if SERVER then
 	hook.Add("PlayerDisconnected", "PlayerDisconnectedSpeedrunner", function(ply)
 		--Prematurely stop the speedrun if the only speedrunner disconnected
 		if ply:GetSubRole() == ROLE_SPEEDRUNNER then
-			AttemptToStopSpeedrun()
+			AttemptToAbortSpeedrun()
 		end
 
 		BroadcastNumPlayersLeft()
@@ -394,7 +414,7 @@ if SERVER then
 		--At the end, both would die when the timer stop and it would be a tie.
 		--To make things more fun for the players in this scenario, simply prevent the revival from occurring if the speedrunner is killed by an opposing speedrunner.
 		if IsValid(attacker) and attacker:IsPlayer() and attacker:GetSubRole() == ROLE_SPEEDRUNNER and attacker:GetTeam() ~= victim:GetTeam() then
-			--Don't remove body. It would be funny if someone revives this person.
+			--Don't remove body. It would be funny if someone revives this player.
 			return
 		end
 
@@ -449,6 +469,8 @@ if SERVER then
 	end)
 
 	hook.Add("TTTBeginRound", "TTTBeginRoundSpeedrunner", function()
+		NUM_PLYS_AT_ROUND_BEGIN = GetNumPlayers()
+		
 		--Starting a speedrun upon GiveRoleLoadout is likely to not take in consideration the roles that other players have yet to be assigned.
 		--In addition, for whatever reason events can't trigger until some point after roles are assigned.
 		for _, ply in ipairs(player.GetAll()) do
@@ -462,22 +484,198 @@ if SERVER then
 		end
 	end)
 
+	local function InitializeLeaderBoard()
+		if sql.TableExists("ttt2_speedrunner_leaderboard") then
+			return
+		end
+
+		--SPEEDRUN_DEBUG
+		sql.Query("DROP TABLE ttt2_speedrunner_leaderboard;")
+		--SPEEDRUN_DEBUG
+
+		sql.Query([[CREATE TABLE ttt2_speedrunner_leaderboard(
+			NumPlayers NUMBER,
+			Name1 TEXT, Time1 TEXT,
+			Name2 TEXT, Time2 TEXT,
+			Name3 TEXT, Time3 TEXT,
+			Name4 TEXT, Time4 TEXT,
+			Name5 TEXT, Time5 TEXT
+		)]])
+
+		for i = 1, 64 do
+			sql.Query([[INSERT INTO ttt2_speedrunner_leaderboard(
+				NumPlayers,
+				Name1, Time1,
+				Name2, Time2,
+				Name3, Time3,
+				Name4, Time4,
+				Name5, Time5
+			)VALUES(
+				]].. tostring(i) ..[[,
+				"nil", "99:59:99",
+				"nil", "99:59:99",
+				"nil", "99:59:99",
+				"nil", "99:59:99",
+				"nil", "99:59:99"
+			);]])
+		end
+	end
+
+	local function GetSplitTimeStr(total_time)
+		local minutes = math.floor(total_time / 60)
+		local seconds = math.floor(total_time - 60 * minutes)
+		if seconds < 0 then
+			seconds = math.floor(total_time)
+		end
+		local seconds_frac = math.floor(100 * (total_time - math.floor(total_time)))
+
+		local minutes_str = string.format("%02d", minutes)
+		local seconds_str = string.format("%02d", seconds)
+		local seconds_frac_str = string.format("%02d", seconds_frac)
+
+		return minutes_str .. ":" .. seconds_str .. ":" .. seconds_frac_str
+	end
+
+	local function InsertNewScore(tbl, record_index, name, total_time_str)
+		local new_tbl = {}
+		new_tbl[1] = {}
+		new_tbl[1]["NumPlayers"] = tbl[1]["NumPlayers"]
+		
+		for i = 1, 5 do
+			if record_index <= i then
+				new_tbl[1]["Name" .. tostring(record_index)] = name
+				new_tbl[1]["Time" .. tostring(record_index)] = total_time_str
+
+				for j = record_index + 1, 5 do
+					new_tbl[1]["Name" .. tostring(j)] = tbl[1]["Name" .. tostring(j)]
+					new_tbl[1]["Time" .. tostring(j)] = tbl[1]["Time" .. tostring(j)]
+				end
+
+				break
+			else
+				new_tbl[1]["Name" .. tostring(i)] = tbl[1]["Name" .. tostring(i)]
+				new_tbl[1]["Time" .. tostring(i)] = tbl[1]["Time" .. tostring(i)]
+			end
+		end
+
+		sql.Query([[UPDATE ttt2_speedrunner_leaderboard SET
+			Name1 = ]] .. new_tbl[1]["Name1"] .. [[, Time1 = ]] .. new_tbl[1]["Time1"] .. [[,
+			Name2 = ]] .. new_tbl[1]["Name2"] .. [[, Time2 = ]] .. new_tbl[1]["Time2"] .. [[,
+			Name3 = ]] .. new_tbl[1]["Name3"] .. [[, Time3 = ]] .. new_tbl[1]["Time3"] .. [[,
+			Name4 = ]] .. new_tbl[1]["Name4"] .. [[, Time4 = ]] .. new_tbl[1]["Time4"] .. [[,
+			Name5 = ]] .. new_tbl[1]["Name5"] .. [[, Time5 = ]] .. new_tbl[1]["Time5"] .. [[,
+		WHERE NumPlayers = ]] .. new_tbl[1]["NumPlayers"] .. [[;]])
+	end
+
+	local function UpdateLeaderBoard(name, total_time, total_time_str)
+		InitializeLeaderBoard()
+		local tbl = sql.Query("SELECT * FROM ttt2_speedrunner_leaderboard WHERE NumPlayers = " .. tostring(NUM_PLYS_AT_ROUND_BEGIN) .. ";")
+		local record_index = 255
+
+		--SPEEDRUN_DEBUG
+		print("SPEEDRUN_DEBUG UpdateLeaderBoard: total_time=" .. tostring(total_time) .. ", total_time_str=" .. total_time_str .. ", printing SQL table for NumPlayers=" .. tostring(NUM_PLYS_AT_ROUND_BEGIN))
+		PrintTable(tbl)
+		--Should look something like this:
+		--1:
+		--	NumPlayers	=	6
+		--	name1	=	nil
+		--	name2	=	nil
+		--	name3	=	nil
+		--	name4	=	nil
+		--	name5	=	nil
+		--	time1	=	99:59:99
+		--	time2	=	99:59:99
+		--	time3	=	99:59:99
+		--	time4	=	99:59:99
+		--	time5	=	99:59:99
+		--SPEEDRUN_DEBUG
+
+		for i = 1, 5 do
+			local cached_time_str = tbl[1]["Time" .. tostring(i)]
+			local cached_minutes = tonumber(string.sub(cached_time_str, 1, 2))
+			local cached_seconds = tonumber(string.sub(cached_time_str, 4, 5))
+			local cached_seconds_frac = tonumber(string.sub(cached_time_str, 7, 8))
+
+			if total_time < 60 * cached_minutes + cached_seconds + cached_seconds_frac / 60 then
+				record_index = i
+				tbl = InsertNewScore(tbl, record_index, name, total_time_str)
+
+				break
+			end
+		end
+
+		--SPEEDRUN_DEBUG
+		PrintTable(tbl)
+		--SPEEDRUN_DEBUG
+
+		return record_index
+	end
+
+	local function BroadcastLeaderBoard(record_index, tbl)
+		local tbl = sql.Query("SELECT * FROM ttt2_speedrunner_leaderboard WHERE NumPlayers = " .. tostring(NUM_PLYS_AT_ROUND_BEGIN) .. ";")
+		local msg_name = "leaderboard_" .. SPEEDRUNNER.name
+		local msg_params = {
+			n = tbl[1]["NumPlayers"]
+		}
+
+		if record_index > 0 and record_index < 6 then
+			msg_name = "leaderboard_new_record_" .. SPEEDRUNNER.name
+
+			for i = 1, 5 do
+				local str_i = tostring(i)
+				local name_i = tbl[1]["Name" .. str_i]
+				local time_i = tbl[1]["Time" .. str_i]
+				if i == record_index then
+					name_i = "**" .. name_i
+					time_i = time_i .. "**"
+				end
+				
+				msg_params["name" .. str_i] = name_i
+				msg_params["time" .. str_i] = time_i
+			end
+		end
+
+		for _, ply in ipairs(player.GetAll()) do
+			if IsValid(ply) and ply:IsPlayer() then
+				LANG.Msg(ply, msg_name, msg_params, MSG_CHAT_PLAIN)
+			end
+		end
+	end
+
 	local function ResetSpeedrunnerDataForServer()
+		SPEEDRUN_START = nil
 		SPEEDRUN_IN_PROGRESS = false
 		SPEEDRUN_STARTER = nil
 		if timer.Exists("TTT2SpeedrunnerSpeedrun_Server") then
 			timer.Remove("TTT2SpeedrunnerSpeedrun_Server")
 		end
-		
+
 		--Done for sanity. If jump power isn't reset properly then it will carry over to subsequent rounds, destroying the user's experience.
 		for _, ply in ipairs(player.GetAll()) do
 			if ply:GetSubRole() == ROLE_SPEEDRUNNER then
 				ply:SetJumpPower(DEFAULT_JUMP_POWER)
 			end
 		end
+
+		NUM_PLYS_AT_ROUND_BEGIN = 0
 	end
-	hook.Add("TTTPrepareRound", "TTTPrepareRoundSeanceForServer", ResetSpeedrunnerDataForServer)
-	hook.Add("TTTEndRound", "TTTEndRoundSeanceForServer", ResetSpeedrunnerDataForServer)
+	hook.Add("TTTPrepareRound", "TTTPrepareRoundSeanceForServer", function()
+		ResetSpeedrunnerDataForServer()
+	end)
+	hook.Add("TTTEndRound", "TTTEndRoundSeanceForServer", function()
+		--Unlikely for SPEEDRUN_STARTER to be invalid, but check it just in case...
+		if SPEEDRUN_IN_PROGRESS and IsValid(SPEEDRUN_STARTER) and SPEEDRUN_STARTER:IsPlayer() and SPEEDRUN_STARTER:GetSubRole() == ROLE_SPEEDRUNNER then
+			local cur_time = CurTime()
+			local total_time = cur_time - SPEEDRUN_START
+			local total_time_str = GetSplitTimeStr(total_time)
+			local name = SPEEDRUN_STARTER:GetName()
+
+			local record_index = UpdateLeaderBoard(name, total_time, total_time_str)
+			BroadcastLeaderBoard(record_index)
+		end
+
+		ResetSpeedrunnerDataForServer()
+	end)
 end
 
 if CLIENT then

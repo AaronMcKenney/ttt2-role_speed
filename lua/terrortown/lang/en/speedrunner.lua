@@ -20,6 +20,23 @@ L["ev_win_" .. TEAM_SPEEDRUNNER] = "The Speedrunner won the round!"
 
 -- OTHER ROLE LANGUAGE STRINGS
 L["hud_display_" .. SPEEDRUNNER.name] = "{n} PLAYER(S) LEFT ({timeleft})"
+L["leaderboard_" .. SPEEDRUNNER.name] = [[Speedrunner Leader Board ({n} Players):
+1st: {name1} | {time1}
+2nd: {name2} | {time2}
+3rd: {name3} | {time3}
+4th: {name4} | {time4}
+5th: {name5} | {time5}
+----
+     {ply_name} | {ply_time}
+]]
+L["leaderboard_new_record_" .. SPEEDRUNNER.name] = [[NEW RECORD!
+Speedrunner Leader Board ({n} Players):
+1st: {name1} | {time1}
+2nd: {name2} | {time2}
+3rd: {name3} | {time3}
+4th: {name4} | {time4}
+5th: {name5} | {time5}
+]]
 
 -- EVENT STRINGS
 -- Need to be very specifically worded, due to how the system translates them.
