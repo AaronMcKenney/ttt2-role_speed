@@ -7,6 +7,18 @@ if SERVER then
 	util.AddNetworkString("TTT2SpeedrunnerRateOfFireUpdate")
 end
 
+--CONSTANTS
+--Hardcoded default that everyone uses.
+local DEFAULT_JUMP_POWER = 160
+
+local function IsInSpecDM(ply)
+	if SpecDM and (ply.IsGhost and ply:IsGhost()) then
+		return true
+	end
+
+	return false
+end
+
 roles.InitCustomTeam(ROLE.name, {
 	icon = "vgui/ttt/dynamic/roles/icon_speed",
 	color = Color(255, 13, 134, 255),
@@ -57,6 +69,26 @@ function ROLE:PreInitialize()
 		self.h_ori, self.s_ori, self.v_ori = ColorToHSV(roles.SPEEDRUNNER.color)
 		self.h_cur = self.h_ori
 		if GetConVar("ttt2_speedrunner_rainbow_enable"):GetBool() then
+
+			--Modified from Pharoah's Ankh.
+			function SpeedrunnerDynamicLight(ply, color, brightness)
+				-- make sure initial values are set
+				if not ply.speed_light_next_state then
+					ply.speed_light_next_state = CurTime()
+				end
+
+				--Create dynamic light
+				local dlight = DynamicLight(ply:EntIndex())
+				dlight.r = color.r
+				dlight.g = color.g
+				dlight.b = color.b
+				dlight.brightness = brightness
+				dlight.Decay = 1000
+				dlight.Size = 200
+				dlight.DieTime = CurTime() + 0.1
+				dlight.Pos = ply:GetPos() + Vector(0, 0, 35)
+			end
+
 			hook.Add("Think", "ThinkTTT2Speedrunner", function()
 				--We cache the HSV color here, as the conversion between RGB and HSV is lossy, leading to unwanted color changes
 				self.h_cur = self.h_cur + 0.2
@@ -92,23 +124,14 @@ function ROLE:PreInitialize()
 						ply:SetRoleDkColor(self.dkcolor)
 						ply:SetRoleLtColor(self.ltcolor)
 						ply:SetRoleBgColor(self.bgcolor)
+						if ply:Alive() and not IsInSpecDM(ply) then
+							SpeedrunnerDynamicLight(ply, self.color, 1)
+						end
 					end
 				end
 			end)
 		end
 	end
-end
-
---CONSTANTS
---Hardcoded default that everyone uses.
-local DEFAULT_JUMP_POWER = 160
-
-local function IsInSpecDM(ply)
-	if SpecDM and (ply.IsGhost and ply:IsGhost()) then
-		return true
-	end
-
-	return false
 end
 
 if SERVER then
@@ -200,9 +223,9 @@ if SERVER then
 		end
 
 		for _, ply in ipairs(player.GetAll()) do
-			local smoke_alpha = 200
+			local smoke_alpha = 100
 			if ply:SteamID64() == spawner_id then
-				smoke_alpha = smoke_alpha / 10
+				smoke_alpha = smoke_alpha / 5
 			end
 
 			net.Start("TTT2SpeedrunnerSpawnSmoke")
@@ -248,7 +271,6 @@ if SERVER then
 			SPEEDRUN_IN_PROGRESS = true
 			SPEEDRUN_STARTER = ply
 			events.Trigger(EVENT_SPEED_START_RUN, SPEEDRUN_STARTER, run_length)
-			smoke_duration = 10
 		end
 
 		net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
