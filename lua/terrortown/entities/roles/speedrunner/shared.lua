@@ -1,7 +1,7 @@
 if SERVER then
 	AddCSLuaFile()
 	resource.AddFile("materials/vgui/ttt/dynamic/roles/icon_speed.vmt")
-	util.AddNetworkString("TTT2SpeedrunnerAnnounceSpeedrun")
+	util.AddNetworkString("TTT2SpeedrunnerTimeLeft")
 	util.AddNetworkString("TTT2SpeedrunnerNumLeft")
 	util.AddNetworkString("TTT2SpeedrunnerSpawnSmoke")
 	util.AddNetworkString("TTT2SpeedrunnerRateOfFireUpdate")
@@ -255,7 +255,7 @@ if SERVER then
 				events.Trigger(EVENT_SPEED_FAILED_RUN, ply, SPEEDRUN_STARTER)
 				SPEEDRUN_STARTER = nil
 
-				net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
+				net.Start("TTT2SpeedrunnerTimeLeft")
 				net.WriteInt(-1, 16)
 				net.Broadcast()
 
@@ -273,7 +273,7 @@ if SERVER then
 			events.Trigger(EVENT_SPEED_START_RUN, SPEEDRUN_STARTER, run_length)
 		end
 
-		net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
+		net.Start("TTT2SpeedrunnerTimeLeft")
 		net.WriteInt(timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server"), 16)
 		net.Broadcast()
 
@@ -297,7 +297,7 @@ if SERVER then
 			SPEEDRUN_STARTER = nil
 
 			--Tell clients who were formerly Speedrunners that the speedrun has been stopped.
-			net.Start("TTT2SpeedrunnerAnnounceSpeedrun")
+			net.Start("TTT2SpeedrunnerTimeLeft")
 			net.WriteInt(-1, 16)
 			net.Broadcast()
 		end
@@ -404,23 +404,53 @@ if SERVER then
 	end)
 
 	hook.Add("TTT2PostPlayerDeath", "TTT2PostPlayerDeathSpeedrunner", function(victim, inflictor, attacker)
+		local time_penalty = GetConVar("ttt2_speedrunner_time_penalty"):GetInt()
+		local time_reward = GetConVar("ttt2_speedrunner_time_reward"):GetInt()
+		local timer_exists = timer.Exists("TTT2SpeedrunnerSpeedrun_Server")
 		BroadcastNumPlayersLeft()
 
 		--Note: "victim" is considered dead at this point.
-		if not IsValid(victim) or not victim:IsPlayer() or IsInSpecDM(victim) or victim:GetSubRole() ~= ROLE_SPEEDRUNNER or not SPEEDRUN_IN_PROGRESS then
+		if not SPEEDRUN_IN_PROGRESS or not IsValid(victim) or not victim:IsPlayer() or IsInSpecDM(victim) then
+			return
+		end
+
+		if victim:GetSubRole() == ROLE_SPEEDRUNNER and timer_exists and time_penalty > 0 then
+			local time_left = timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server")
+			if time_left - time_penalty <= 0 then
+				AttemptToStopSpeedrun()
+				return
+			end
+			timer.Adjust("TTT2SpeedrunnerSpeedrun_Server", time_left - time_penalty)
+
+			net.Start("TTT2SpeedrunnerTimeLeft")
+			net.WriteInt(timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server"), 16)
+			net.Broadcast()
+		end
+
+		if IsValid(attacker) and attacker:IsPlayer() and not IsInSpecDM(attacker) and attacker:GetSubRole() == ROLE_SPEEDRUNNER and victim:GetTeam() ~= attacker:GetTeam() and timer_exists and time_reward > 0 then
+			timer.Adjust("TTT2SpeedrunnerSpeedrun_Server", timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server") + time_reward)
+			net.Start("TTT2SpeedrunnerTimeLeft")
+			net.WriteInt(timer.TimeLeft("TTT2SpeedrunnerSpeedrun_Server"), 16)
+			net.Broadcast()
+		end
+
+		--Now that we've handled time penalty/reward, only handle logic pertaining to the victim being a speedrunner from here on out.
+		if victim:GetSubRole() ~= ROLE_SPEEDRUNNER then
 			return
 		end
 
 		--Extremely unlikely scenario: Two speedrunners on different teams are trying to win. They are all that remains.
 		--In this scenario, ordinarily they would be unable to permanently kill the other due to sharing the same speedrun timer.
-		--At the end, both would die when the timer stop and it would be a tie.
+		--At the end, both would die when the timer stops and it would be a tie.
 		--To make things more fun for the players in this scenario, simply prevent the revival from occurring if the speedrunner is killed by an opposing speedrunner.
 		if IsValid(attacker) and attacker:IsPlayer() and attacker:GetSubRole() == ROLE_SPEEDRUNNER and attacker:GetTeam() ~= victim:GetTeam() then
 			--Don't remove body. It would be funny if someone revives this person.
+			--Furthermore, this prevents prolonging the timer by the two opposing speedrunners killing eachother repeatedly.
+			--In addition, if we hit this condition both time penalty and reward will proc. Speedrunners are penalized for dying, but are rewarded for killing someone on a different team.
 			return
 		end
 
-		--If the speedrun is still going on, remove the player's corpse in a puff of smoke and respawn the player with some time penalty
+		--If the speedrun is still going on, remove the player's corpse in a puff of smoke and respawn the player after some time has passed
 		corpse = victim:FindCorpse()
 		if corpse then
 			SpawnSmoke(victim:SteamID64(), corpse:GetPos(), 3)
@@ -559,7 +589,7 @@ if CLIENT then
 		em:Finish()
 	end)
 
-	net.Receive("TTT2SpeedrunnerAnnounceSpeedrun", function()
+	net.Receive("TTT2SpeedrunnerTimeLeft", function()
 		client = LocalPlayer()
 		time_left = net.ReadInt(16)
 

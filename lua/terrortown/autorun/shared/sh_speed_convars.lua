@@ -2,6 +2,8 @@
 CreateConVar("ttt2_speedrunner_time_base", "50", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_time_per_player", "10", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_respawn_time", "20", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_time_penalty", "0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
+CreateConVar("ttt2_speedrunner_time_reward", "0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_smoke_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_rainbow_enable", "1", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
 CreateConVar("ttt2_speedrunner_speed_scale", "3.0", {FCVAR_ARCHIVE, FCVAR_NOTFIY})
@@ -42,6 +44,28 @@ hook.Add("TTTUlxDynamicRCVars", "TTTUlxDynamicSpeedrunnerCVars", function(tbl)
 		max = 30,
 		decimal = 0,
 		desc = "ttt2_speedrunner_respawn_time (Def: 20)"
+	})
+
+	--# If the speedrunner dies, this number of seconds is deducted from their timer.
+	--  ttt2_speedrunner_time_penalty [0..n] (default: 0)
+	table.insert(tbl[ROLE_SPEEDRUNNER], {
+		cvar = "ttt2_speedrunner_time_penalty",
+		slider = true,
+		min = 0,
+		max = 30,
+		decimal = 0,
+		desc = "ttt2_speedrunner_time_penalty (Def: 0)"
+	})
+
+	--# If the speedrunner kills a player on a different team, this number of seconds is added to their timer.
+	--  ttt2_speedrunner_time_reward [0..n] (default: 0)
+	table.insert(tbl[ROLE_SPEEDRUNNER], {
+		cvar = "ttt2_speedrunner_time_reward",
+		slider = true,
+		min = 0,
+		max = 30,
+		decimal = 0,
+		desc = "ttt2_speedrunner_time_reward (Def: 0)"
 	})
 
 	--# Should the opposition see a bunch of smoke when the Speedrunner spawns/dies/revives?
@@ -98,6 +122,8 @@ hook.Add("TTT2SyncGlobals", "AddSpeedrunnerGlobals", function()
 	SetGlobalInt("ttt2_speedrunner_time_base", GetConVar("ttt2_speedrunner_time_base"):GetInt())
 	SetGlobalInt("ttt2_speedrunner_time_per_player", GetConVar("ttt2_speedrunner_time_per_player"):GetInt())
 	SetGlobalInt("ttt2_speedrunner_respawn_time", GetConVar("ttt2_speedrunner_respawn_time"):GetInt())
+	SetGlobalInt("ttt2_speedrunner_time_penalty", GetConVar("ttt2_speedrunner_time_penalty"):GetInt())
+	SetGlobalInt("ttt2_speedrunner_time_reward", GetConVar("ttt2_speedrunner_time_reward"):GetInt())
 	SetGlobalBool("ttt2_speedrunner_smoke_enable", GetConVar("ttt2_speedrunner_smoke_enable"):GetBool())
 	SetGlobalBool("ttt2_speedrunner_rainbow_enable", GetConVar("ttt2_speedrunner_rainbow_enable"):GetBool())
 	SetGlobalFloat("ttt2_speedrunner_speed_scale", GetConVar("ttt2_speedrunner_speed_scale"):GetFloat())
@@ -113,6 +139,12 @@ cvars.AddChangeCallback("ttt2_speedrunner_time_per_player", function(name, old, 
 end)
 cvars.AddChangeCallback("ttt2_speedrunner_respawn_time", function(name, old, new)
 	SetGlobalInt("ttt2_speedrunner_respawn_time", tonumber(new))
+end)
+cvars.AddChangeCallback("ttt2_speedrunner_time_penalty", function(name, old, new)
+	SetGlobalInt("ttt2_speedrunner_time_penalty", tonumber(new))
+end)
+cvars.AddChangeCallback("ttt2_speedrunner_time_reward", function(name, old, new)
+	SetGlobalInt("ttt2_speedrunner_time_reward", tonumber(new))
 end)
 cvars.AddChangeCallback("ttt2_speedrunner_smoke_enable", function(name, old, new)
 	SetGlobalBool("ttt2_speedrunner_smoke_enable", tobool(tonumber(new)))
