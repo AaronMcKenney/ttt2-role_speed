@@ -1,18 +1,20 @@
-[i]I... I was never good at socializing... It's just so much easier to get to know someone after the fact... you know?[/i]
+[i]Hello and welcome to GDQ 2023! Today I'll be speedrunning Trouble in Terrorists Town 2, an RDM game with some minor elements of social deduction...[/i]
  
-You have to use [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1357204556]TTT2[/URL] in order to use this role. Additionally using [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1362430347]ULX for TTT2[/URL] is recommended. Report bugs concerning this role [URL=https://github.com/AaronMcKenney/ttt2-role_copy]here[/URL] and submit new role ideas [URL=https://github.com/TTT-2/addon-ideas]here[/URL]. A list of all currently available roles can be found [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1737053146]here[/URL].
+You have to use [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1357204556]TTT2[/URL] in order to use this role. Additionally using [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1362430347]ULX for TTT2[/URL] is recommended. Report bugs concerning this role [URL=https://github.com/AaronMcKenney/ttt2-role_speed]here[/URL] and submit new role ideas [URL=https://github.com/TTT-2/addon-ideas]here[/URL]. A list of all currently available roles can be found [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1737053146]here[/URL].
  
 Discord: [url=https://discord.gg/Npcbb4W]https://discord.gg/Npcbb4W[/url]
-Source: [url=https://github.com/AaronMcKenney/ttt2-role_copy]https://github.com/AaronMcKenney/ttt2-role_copy[/url]
+Source: [url=https://github.com/AaronMcKenney/ttt2-role_speed]https://github.com/AaronMcKenney/ttt2-role_speed[/url]
  
  
 [img]https://i.imgur.com/KeP4fWN.png[/img]
  
-The Copycat is a 3rd party neutral killer role, who has access to The Copycat Files. The role of every corpse The Copycat investigates is transcribed in The Files. The Copycat can then use The Files to change their role to any of those that they have transcribed. However, they may only change roles every 30 seconds, and may not use the same role twice (aside from their original role). This latter restriction was added to prevent potential game breaking interactions wherein (for example) a Copycat abuses a revival role for infinite revivals (This restriction can be removed if you don't mind that).
+The Speedrunner is a public evil role, who must act quickly to kill everyone else before their timer runs out. While the clock is still ticking they will be gifted with immense speed and will always respawn upon death. However, the minute that the timer hits zero they will permanently die.
  
-The Copycat additionally starts with a single credit and may accrue more credits through murder. However, they have no shop to spend them on. They'll have to switch to a Traitor, Detective, or other shopping role to make use of their hard earned cash.
- 
-Naturally, this role works best on servers that have numerous roles installed... provided that those roles have accounted for the possibility of being on a non-default team.
+The nature of the timer can be controlled in the ConVars listed below. In short the server admin has control over these aspects:
+1. The base time that the clock has, with a default value of 50 seconds
+2. The added time that the clock has for each player, with a default of 10 seconds per player (ex. for a 6 player group, the timer would be 50 + 6*10 = 110 seconds)
+3. The respawn time that the speedrunner must wait between lives, with a default value of 20 seconds. The clock is still ticking while the speedrunner is preparing to respawn, and this is meant to give all the other players a chance to recover and coordinate a plan
+4. Time penalties and rewards, both set to 0 by default. Intended for those who desire risk and reward, these ConVars can alter the clock by subtracting time every time the speedrunner dies and adding time whenever the speedrunner kills a player who isn't on their team
  
 [img]https://i.imgur.com/jIBWtbM.png[/img]
  
@@ -26,22 +28,34 @@ Convars are variables that are introduced to allow server owners to customize th
 # the limit of players that spawn as this role each round, this overwrites the percentage
   ttt_copycat_max [0..n] (default: 1)
 # the probability each round of this role being spawned at all
-  ttt_copycat_random [0..100] (default: 30)
+  ttt_copycat_random [0..100] (default: 15)
 # the amount of players needed for this role to spawn
   ttt_copycat_min_players: [0..n] (default: 6)[/code]
  
 [h1]Rolespecific Convars:[/h1]
-[code]# Can the Copycat only switch to a given role once per game?
-  Note1: If disabled, I can't guarrantee that this won't cause role abuse (ex. constantly swapping between revival roles for infinite lives)
-  ttt2_copycat_once_per_role [0/1] (default: 1)
-# How many seconds must pass until The Copycat can change their role again?
-  ttt2_copycat_role_change_cooldown [0..n] (default: 30)
-# Is the Copycat on The Doppelganger's Team?
-  Note1: Even if this is enabled, The Copycat will be on their own team if the Doppelganger isn't installed.
-  Note2: The server (and GMod if peer-to-peer) will need to be restarted in order for a change in this ConVar to take effect
-  ttt2_copycat_on_dop_team [0/1] (default: 1)[/code]
+[code]# The number of seconds that the speedrunner has to win the game is based on the following formula:
+  ttt2_speedrunner_time_base + n * ttt2_speedrunner_time_per_player
+  Where n is the number of players who are currently alive and aren't currently on your team.
+  ttt2_speedrunner_time_base [0..n] (default: 50)
+  ttt2_speedrunner_time_per_player [0..n] (default: 10)
+# Respawn time in seconds (Disabled if 0). Speedrunner will not respawn if they failed the speedrun.
+  ttt2_speedrunner_respawn_time [0..n] (default: 20)
+# If the speedrunner dies, this number of seconds is deducted from their timer.
+  ttt2_speedrunner_time_penalty [0..n] (default: 0)
+# If the speedrunner kills a player on a different team, this number of seconds is added to their timer.
+  ttt2_speedrunner_time_reward [0..n] (default: 0)
+# Should the opposition see a bunch of smoke when the Speedrunner spawns/dies/revives?
+  ttt2_speedrunner_smoke_enable [0/1] (default: 1)
+# Should the Speedrunner's role and team icon have a rainbow effect?
+  ttt2_speedrunner_rainbow_enable [0/1] (default: 1)
+# Multiplier for the Speedrunner's move speed
+  ttt2_speedrunner_speed_scale [1.0..n.m] (default: 3.0)
+# Multiplier for the Speedrunner's jump height
+  ttt2_speedrunner_jump_scale [1.0..n.m] (default: 2.0)
+# Multiplier for the Speedrunner's fire rate
+  ttt2_speedrunner_fire_rate_scale [1.0..n.m] (default: 1.5)[/code]
  
 --
 [h1]Credits:[/h1]
 [URL=https://steamcommunity.com/profiles/76561198025772353/]BlackMagicFine[/URL]: creator of this role addon, icon, and thumbnail
-[URL=https://steamcommunity.com/id/cuckoo]cuckoo[/URL]: Released the [URL=https://steamcommunity.com/sharedfiles/filedetails/?id=1947794080]Petition[/URL] "weapon" for TTT2, whose model I stole for this role. OG model was made by [URL=https://steamcommunity.com/id/7800415511147]JλCK0L[/URL], which was translated to English by [URL=https://steamcommunity.com/id/16-Bytes]16 Bytes[/URL].
+[URL=https://www.flaticon.com/free-icon/quarter-of-an-hour_66171?term=stopwatch&page=1&position=64&origin=search&related_id=66171]flaticon Quarter Of An Hour free icon[/URL]: role icon was obtained from here.

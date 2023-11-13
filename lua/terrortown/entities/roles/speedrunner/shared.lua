@@ -50,7 +50,7 @@ function ROLE:PreInitialize()
 		pct = 0.13,
 		maximum = 1,
 		minPlayers = 6,
-		random = 30,
+		random = 15,
 
 		--Speedrunner can use traitor buttons, to handle the case where traitors hide in traitor rooms, preventing the Speedrunner from winning
 		--Traitor buttons also give Speedrunner a small edge without opening the pandora's box of traitor shop items
