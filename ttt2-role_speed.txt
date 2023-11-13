@@ -11,10 +11,12 @@ Source: [url=https://github.com/AaronMcKenney/ttt2-role_speed]https://github.com
 The Speedrunner is a public evil role, who must act quickly to kill everyone else before their timer runs out. While the clock is still ticking they will be gifted with immense speed and will always respawn upon death. However, the minute that the timer hits zero they will permanently die.
  
 The nature of the timer can be controlled in the ConVars listed below. In short the server admin has control over these aspects:
-1. The base time that the clock has, with a default value of 50 seconds
-2. The added time that the clock has for each player, with a default of 10 seconds per player (ex. for a 6 player group, the timer would be 50 + 6*10 = 110 seconds)
-3. The respawn time that the speedrunner must wait between lives, with a default value of 20 seconds. The clock is still ticking while the speedrunner is preparing to respawn, and this is meant to give all the other players a chance to recover and coordinate a plan
-4. Time penalties and rewards, both set to 0 by default. Intended for those who desire risk and reward, these ConVars can alter the clock by subtracting time every time the speedrunner dies and adding time whenever the speedrunner kills a player who isn't on their team
+[olist]
+    [*]The base time that the clock has, with a default value of 50 seconds
+    [*]The added time that the clock has for each player, with a default of 10 seconds per player (ex. for a 6 player group, the timer would be 50 + 6*10 = 110 seconds)
+    [*]The respawn time that the speedrunner must wait between lives, with a default value of 20 seconds. The clock is still ticking while the speedrunner is preparing to respawn, and this is meant to give all the other players a chance to recover and coordinate a plan
+    [*]Time penalties and rewards, both set to 0 by default. Intended for those who desire risk and reward, these ConVars can alter the clock by subtracting time every time the speedrunner dies and adding time whenever the speedrunner kills a player who isn't on their team
+[/olist]
  
 [img]https://i.imgur.com/jIBWtbM.png[/img]
  
