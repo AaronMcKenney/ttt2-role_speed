@@ -76,7 +76,7 @@ hook.Add("TTTUlxDynamicRCVars", "TTTUlxDynamicSpeedrunnerCVars", function(tbl)
 		desc = "ttt2_speedrunner_smoke_enable (Def: 1)"
 	})
 
-	--# Should the Speedrunner's role and team icon have a rainbow effect?
+	--# Should the Speedrunner's body, role and team icon have a rainbow effect?
 	--  ttt2_speedrunner_rainbow_enable [0/1] (default: 1)
 	table.insert(tbl[ROLE_SPEEDRUNNER], {
 		cvar = "ttt2_speedrunner_rainbow_enable",

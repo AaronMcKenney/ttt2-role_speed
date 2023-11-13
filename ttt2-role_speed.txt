@@ -22,15 +22,15 @@ Convars are variables that are introduced to allow server owners to customize th
  
 [h1]Normal Role Convars (also found in ULX):[/h1]
 [code]# enable or disable this role
-  ttt_copycat_enabled [0/1] (default: 1)
+  ttt_speedrunner_enabled [0/1] (default: 1)
 # the percentage of players that are spawned as this role
-  ttt_copycat_pct [0.0..1.0] (default: 0.13)
+  ttt_speedrunner_pct [0.0..1.0] (default: 0.13)
 # the limit of players that spawn as this role each round, this overwrites the percentage
-  ttt_copycat_max [0..n] (default: 1)
+  ttt_speedrunner_max [0..n] (default: 1)
 # the probability each round of this role being spawned at all
-  ttt_copycat_random [0..100] (default: 15)
+  ttt_speedrunner_random [0..100] (default: 15)
 # the amount of players needed for this role to spawn
-  ttt_copycat_min_players: [0..n] (default: 6)[/code]
+  ttt_speedrunner_min_players: [0..n] (default: 6)[/code]
  
 [h1]Rolespecific Convars:[/h1]
 [code]# The number of seconds that the speedrunner has to win the game is based on the following formula:
@@ -46,7 +46,7 @@ Convars are variables that are introduced to allow server owners to customize th
   ttt2_speedrunner_time_reward [0..n] (default: 0)
 # Should the opposition see a bunch of smoke when the Speedrunner spawns/dies/revives?
   ttt2_speedrunner_smoke_enable [0/1] (default: 1)
-# Should the Speedrunner's role and team icon have a rainbow effect?
+# Should the Speedrunner's body, role and team icon have a rainbow effect?
   ttt2_speedrunner_rainbow_enable [0/1] (default: 1)
 # Multiplier for the Speedrunner's move speed
   ttt2_speedrunner_speed_scale [1.0..n.m] (default: 3.0)
