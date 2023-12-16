@@ -655,6 +655,87 @@ if CLIENT then
 	end
 	hook.Add("TTTPrepareRound", "TTTPrepareRoundSeanceForClient", ResetSpeedrunnerDataForClient)
 	hook.Add("TTTEndRound", "TTTEndRoundSeanceForClient", ResetSpeedrunnerDataForClient)
+
+	-------------
+	-- CONVARS --
+	-------------
+	function ROLE:AddToSettingsMenu(parent)
+		local form = vgui.CreateTTT2Form(parent, "header_roles_additional")
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_time_base",
+			label = "label_speedrunner_time_base",
+			min = 0,
+			max = 360,
+			decimal = 0
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_time_per_player",
+			label = "label_speedrunner_time_per_player",
+			min = 0,
+			max = 90,
+			decimal = 0
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_respawn_time",
+			label = "label_speedrunner_respawn_time",
+			min = 0,
+			max = 30,
+			decimal = 0
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_time_penalty",
+			label = "label_speedrunner_time_penalty",
+			min = 0,
+			max = 30,
+			decimal = 0
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_time_reward",
+			label = "label_speedrunner_time_reward",
+			min = 0,
+			max = 30,
+			decimal = 0
+		})
+
+		form:MakeCheckBox({
+			serverConvar = "ttt2_speedrunner_smoke_enable",
+			label = "label_speedrunner_smoke_enable"
+		})
+
+		form:MakeCheckBox({
+			serverConvar = "ttt2_speedrunner_rainbow_enable",
+			label = "label_speedrunner_rainbow_enable"
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_speed_scale",
+			label = "label_speedrunner_speed_scale",
+			min = 1.0,
+			max = 5.0,
+			decimal = 2,
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_jump_scale",
+			label = "label_speedrunner_jump_scale",
+			min = 1.0,
+			max = 5.0,
+			decimal = 2,
+		})
+
+		form:MakeSlider({
+			serverConvar = "ttt2_speedrunner_fire_rate_scale",
+			label = "label_speedrunner_fire_rate_scale",
+			min = 1.0,
+			max = 5.0,
+			decimal = 2,
+		})
+	end
 end
 
 hook.Add("TTTPlayerSpeedModifier", "TTTPlayerSpeedModifierSpeedrunner", function(ply, _, _, no_lag)
